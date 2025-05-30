@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Equation Pyramid</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgb(25, 146, 128);
+      color: white;
+    }
+    .pyramid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: -25px;
+    }
+    .row:first-child {
+      margin-top: 0;
+    }
+    .hex {
+      width: 120px;
+      height: 135px;
+      background: white;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      font-weight: bold;
+      font-size: 3rem;
+      color: black;
+    }
+    .label {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.1rem;
+      font-weight: normal;
+    }
+    .controls {
+      margin-bottom: 1rem;
+    }
+    .found {
+      margin-top: 1rem;
+    }
+    #found {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0;
+      list-style: none;
+      align-items: center;
+    }
+    #found li {
+      background: white;
+      color: black;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 1rem;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+      width: fit-content;
+      text-align: center;
+    }
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Equation Pyramid</h1>
+  <div class="pyramid" id="pyramid"></div>
+  <div class="controls">
+    <input
+      type="text"
+      id="input"
+      maxlength="3"
+      placeholder="Enter 3 letters..."
+      onkeydown="if(event.key === 'Enter') handleSubmit()"
+    />
+    <button onclick="handleSubmit()">Submit</button>
+  </div>
+  <div>
+    Target: <strong id="target"></strong> | Score: <strong id="score">0</strong>
+  </div>
+  <div class="found">
+    <h3>Found Solutions:</h3>
+    <ul id="found"></ul>
+  </div>
+
+  <script>
+    const letters = 'ABCDEFGHIJ'; // 10 tiles total
+    const operators = ['+', '-', '*', '/'];
+    let tiles = [];
+    const layout = [[0], [1, 2], [3, 4, 5], [6, 7, 8, 9]];
+    let target;
+    let score = 0;
+    const found = new Set();
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateTiles() {
+      tiles = [];
+      const seen = new Set();
+
+      while (tiles.length < 10) {
+        const op = operators[getRandomInt(0, operators.length - 1)];
+        const val = getRandomInt(1, 9);
+        const key = op + val;
+        if (!seen.has(key)) {
+          seen.add(key);
+          tiles.push({
+            id: letters[tiles.length],
+            op,
+            val,
+          });
+        }
+      }
+    }
+
+    function formatOperator(op) {
+      switch (op) {
+        case '*':
+          return '&times;';
+        case '/':
+          return '&divide;';
+        default:
+          return op;
+      }
+    }
+
+    function renderPyramid() {
+      const pyramid = document.getElementById('pyramid');
+      pyramid.innerHTML = '';
+      layout.forEach((row) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+        row.forEach((i) => {
+          const tile = tiles[i];
+          const hex = document.createElement('div');
+          hex.className = 'hex';
+          hex.innerHTML = `
+            <div class="label">${tile.id}</div>
+            <div>${formatOperator(tile.op)}${tile.val}</div>
+          `;
+          rowDiv.appendChild(hex);
+        });
+        pyramid.appendChild(rowDiv);
+      });
+    }
+
+    function applyOps(tileList) {
+      if (tileList.length === 0) return 0;
+      // Ignore the operator on the first tile, treat its value as positive
+      let expression = tileList[0].val.toString();
+
+      for (let i = 1; i < tileList.length; i++) {
+        const { op, val } = tileList[i];
+        expression += op + val;
+      }
+
+      // Evaluate expression respecting order of operations using Function constructor
+      // Replace division with Math.floor division to replicate integer division
+      // So replace all "÷" or "/" with "Math.floor(... / ...)" form manually
+      // Here operators are +, -, *, /, so just handle / with Math.floor
+
+      // We'll transform e.g. "7-4/2" into "7-Math.floor(4/2)"
+
+      // To do this properly, tokenize and replace divisions with floor
+
+      // But simpler: Replace all / with /, then evaluate and floor after
+
+      // Safer approach: Use a small helper to do integer division in expression
+
+      // Instead, let's parse and evaluate ourselves respecting precedence:
+
+      // We'll write a small parser for +, -, *, / with integer division
+
+      function evaluate(expr) {
+        // Tokenize expr
+        const tokens = expr.match(/(\d+|[+\-*\/])/g).map(t => (/\d+/.test(t) ? parseInt(t) : t));
+
+        // Process * and /
+        let stack = [];
+        for (let i = 0; i < tokens.length; i++) {
+          let token = tokens[i];
+          if (token === '*') {
+            const prev = stack.pop();
+            const next = tokens[++i];
+            stack.push(prev * next);
+          } else if (token === '/') {
+            const prev = stack.pop();
+            const next = tokens[++i];
+            stack.push(Math.floor(prev / next));
+          } else {
+            stack.push(token);
+          }
+        }
+
+        // Process + and -
+        let result = stack[0];
+        for (let i = 1; i < stack.length; i += 2) {
+          const op = stack[i];
+          const val = stack[i + 1];
+          if (op === '+') result += val;
+          else if (op === '-') result -= val;
+        }
+        return result;
+      }
+
+      return evaluate(expression);
+    }
+
+    function handleSubmit() {
+      const inputElem = document.getElementById('input');
+      const input = inputElem.value.toUpperCase();
+      if (input.length !== 3 || new Set(input).size !== 3) return;
+      if (found.has(input)) return;
+
+      const selected = input.split('').map((ch) => tiles.find((t) => t.id === ch));
+      if (selected.includes(undefined)) return;
+
+      const result = applyOps(selected);
+      if (result === target) {
+        found.add(input);
+        score++;
+        document.getElementById('score').innerText = score;
+        const li = document.createElement('li');
+        li.textContent = input;
+        document.getElementById('found').appendChild(li);
+      }
+      inputElem.value = '';
+    }
+
+    function init() {
+      generateTiles();
+      renderPyramid();
+      target = getRandomInt(1, 10);
+      document.getElementById('target').innerText = target;
+      score = 0;
+      document.getElementById('score').innerText = score;
+      found.clear();
+      document.getElementById('found').innerHTML = '';
+      document.getElementById('input').value = '';
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

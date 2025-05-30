@@ -81,10 +81,82 @@
         opacity: 1;
       }
     }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-content {
+      background-color: white;
+      color: black;
+      margin: 10% auto;
+      padding: 1.5rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      font-size: 1rem;
+    }
+
+    .modal-content h2 {
+      text-align: center;
+    }
+    
+    .modal-content ul {
+      margin-top: 0.5rem;
+      padding-left: 1.2rem;
+    }
+
+    .modal-content li {
+      margin-bottom: 0.4rem;
+    }
+
+    .close {
+      color: black;
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
   <h1>Equation Pyramid</h1>
+  <button id="helpBtn" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; background: white; color: black; border: none; border-radius: 50%; width: 2.5rem; height: 2.5rem; cursor: pointer;">
+    ?
+  </button>
+  
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>How to Play</h2>
+      <p>
+        This is a math puzzle game involving a pyramid of 10 hexagon tiles.
+      </p>
+      <ul>
+        <li>The pyramid contains 10 tiles, each with a unique letter (A–J), an operator (+, −, ×, ÷), and a digit (1–9).</li>
+        <li>A target number is shown below the pyramid.</li>
+        <li>You must enter 3 tile letters (e.g., CBA) in any order into the input box.</li>
+        <li>The tiles are used in the order you enter them.</li>
+        <li>The first tile's <strong>operator is ignored</strong>, only its digit is used.</li>
+        <li>The next two tiles apply their operator and digit to form a complete equation.</li>
+        <li>Operator precedence applies: × and ÷ happen before + and −.</li>
+        <li>If your result equals the target number, you score 1 point and the combo is saved.</li>
+        <li>Each valid solution can only be used once.</li>
+      </ul>
+    </div>
+  </div>
+  
   <div class="pyramid" id="pyramid"></div>
   <div class="controls">
     <input
@@ -260,9 +332,25 @@
       found.clear();
       document.getElementById('found').innerHTML = '';
       document.getElementById('input').value = '';
+
+      document.getElementById("helpBtn").onclick = () => {
+        document.getElementById("modal").style.display = "block";
+      };
+
+      document.getElementById("closeModal").onclick = () => {
+        document.getElementById("modal").style.display = "none";
+      };
     }
 
     window.onload = init;
+
+    window.onclick = function (event) {
+      const modal = document.getElementById("modal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    };
+
   </script>
 </body>
 </html>

@@ -129,6 +129,21 @@
       cursor: pointer;
     }
 
+    @keyframes pop-in {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(0.85);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .pop-in {
+      animation: pop-in 200ms ease;
+    }
   </style>
 </head>
 <body>
@@ -178,6 +193,7 @@
   </div>
 
   <script>
+    const DEBUG_SHOW_SOLUTION = true; // Toggle this to false for normal play
     const letters = 'ABCDEFGHIJ'; // 10 tiles total
     const operators = ['+', '-', '*', '/'];
     let tiles = [];
@@ -186,28 +202,51 @@
     let selectedTiles = [];
     let score = 0;
     const found = new Set();
+    let guaranteedSolution = []; // Array of 3 tile IDs
 
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     function generateTiles() {
-      tiles = [];
-      const seen = new Set();
+      const lettersShuffled = [...letters].sort(() => Math.random() - 0.5);
+      const selectedLetters = lettersShuffled.slice(0, 3);
 
-      while (tiles.length < 10) {
+      const t1 = {
+        id: selectedLetters[0],
+        op: '+',
+        val: getRandomInt(1, 9),
+      };
+      const t2 = {
+        id: selectedLetters[1],
+        op: operators[getRandomInt(0, operators.length - 1)],
+        val: getRandomInt(1, 9),
+      };
+      const t3 = {
+        id: selectedLetters[2],
+        op: operators[getRandomInt(0, operators.length - 1)],
+        val: getRandomInt(1, 9),
+      };
+
+      const solutionTiles = [t1, t2, t3];
+      guaranteedSolution = solutionTiles.map(t => t.id);
+      target = applyOps(solutionTiles);
+
+      const seen = new Set(solutionTiles.map(t => t.op + t.val));
+      while (solutionTiles.length < 10) {
         const op = operators[getRandomInt(0, operators.length - 1)];
         const val = getRandomInt(1, 9);
         const key = op + val;
-        if (!seen.has(key)) {
-          seen.add(key);
-          tiles.push({
-            id: letters[tiles.length],
-            op,
-            val,
-          });
-        }
+        if (seen.has(key)) continue;
+        seen.add(key);
+        solutionTiles.push({
+          id: letters[solutionTiles.length],
+          op,
+          val
+        });
       }
+
+      tiles = solutionTiles.sort(() => Math.random() - 0.5);
     }
 
     function formatOperator(op) {
@@ -222,44 +261,60 @@
     }
 
     function renderPyramid() {
-  const pyramid = document.getElementById('pyramid');
-  pyramid.innerHTML = '';
-  layout.forEach((row) => {
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'row';
-    row.forEach((i) => {
-      const tile = tiles[i];
-      const hex = document.createElement('div');
-      hex.className = 'hex';
-      hex.dataset.id = tile.id;
-      hex.innerHTML = `
-        <div class="label">${tile.id}</div>
-        <div>${formatOperator(tile.op)}${tile.val}</div>
-      `;
+      const pyramid = document.getElementById('pyramid');
+      pyramid.innerHTML = '';
+      layout.forEach((row) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+        row.forEach((i) => {
+          const tile = tiles[i];
+          const hex = document.createElement('div');
+          hex.className = 'hex';
+          hex.dataset.id = tile.id;
+          hex.innerHTML = `
+            <div class="label">${tile.id}</div>
+            <div>${formatOperator(tile.op)}${tile.val}</div>
+          `;
 
-      // 👇 Add a click listener for selection
-      hex.addEventListener('click', () => {
-        const alreadySelected = selectedTiles.includes(tile.id);
+          // 👇 Add a click listener for selection
+          hex.addEventListener('click', () => {
+            const alreadySelected = selectedTiles.includes(tile.id);
 
-        if (alreadySelected) {
-          selectedTiles = selectedTiles.filter(t => t !== tile.id);
-          hex.style.backgroundColor = 'white';
-        } else if (selectedTiles.length < 3) {
-          selectedTiles.push(tile.id);
-          hex.style.backgroundColor = '#fffb6b'; // Yellow highlight
-        }
+            // selection animation
+            hex.classList.add('pop-in');
+            // Remove the class after animation completes to allow future re-trigger
+            setTimeout(() => hex.classList.remove('pop-in'), 200);
 
-        // Auto-submit when 3 selected
-        if (selectedTiles.length === 3) {
-          handleTapSubmit();
-        }
+            if (alreadySelected) {
+              selectedTiles = selectedTiles.filter(t => t !== tile.id);
+              hex.style.backgroundColor = 'white';
+            } else if (selectedTiles.length < 3) {
+              selectedTiles.push(tile.id);
+              hex.style.backgroundColor = '#fffb6b'; // Yellow highlight
+            }
+
+            // Auto-submit when 3 selected
+            if (selectedTiles.length === 3) {
+              handleTapSubmit();
+            }
+          });
+
+          rowDiv.appendChild(hex);
+        });
+        pyramid.appendChild(rowDiv);
       });
 
-      rowDiv.appendChild(hex);
-    });
-    pyramid.appendChild(rowDiv);
-  });
-}
+      if (DEBUG_SHOW_SOLUTION) {
+        guaranteedSolution.forEach(id => {
+          const hex = document.querySelector(`.hex[data-id="${id}"]`);
+          if (hex) {
+            hex.style.backgroundColor = '#fffb6b'; // same highlight
+            hex.classList.add('pop-in');
+            setTimeout(() => hex.classList.remove('pop-in'), 200);
+          }
+        });
+      }
+    }
 
 
     function applyOps(tileList) {
@@ -357,6 +412,16 @@
         const li = document.createElement('li');
         li.textContent = input;
         document.getElementById('found').appendChild(li);
+
+        // Add pop animation to selected tiles
+        selected.forEach(t => {
+          const hex = document.querySelector(`.hex[data-id="${t.id}"]`);
+          if (hex) {
+            hex.classList.add('pop-in');
+            // Remove the class after animation completes to allow future re-trigger
+            setTimeout(() => hex.classList.remove('pop-in'), 200);
+          }
+        });
       }
 
       // Reset selection and colors

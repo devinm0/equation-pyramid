@@ -41,6 +41,7 @@
       font-weight: bold;
       font-size: 3rem;
       color: black;
+      transition: background-color 0.3s ease;
     }
     .label {
       position: absolute;
@@ -182,6 +183,7 @@
     let tiles = [];
     const layout = [[0], [1, 2], [3, 4, 5], [6, 7, 8, 9]];
     let target;
+    let selectedTiles = [];
     let score = 0;
     const found = new Set();
 
@@ -220,24 +222,45 @@
     }
 
     function renderPyramid() {
-      const pyramid = document.getElementById('pyramid');
-      pyramid.innerHTML = '';
-      layout.forEach((row) => {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'row';
-        row.forEach((i) => {
-          const tile = tiles[i];
-          const hex = document.createElement('div');
-          hex.className = 'hex';
-          hex.innerHTML = `
-            <div class="label">${tile.id}</div>
-            <div>${formatOperator(tile.op)}${tile.val}</div>
-          `;
-          rowDiv.appendChild(hex);
-        });
-        pyramid.appendChild(rowDiv);
+  const pyramid = document.getElementById('pyramid');
+  pyramid.innerHTML = '';
+  layout.forEach((row) => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'row';
+    row.forEach((i) => {
+      const tile = tiles[i];
+      const hex = document.createElement('div');
+      hex.className = 'hex';
+      hex.dataset.id = tile.id;
+      hex.innerHTML = `
+        <div class="label">${tile.id}</div>
+        <div>${formatOperator(tile.op)}${tile.val}</div>
+      `;
+
+      // 👇 Add a click listener for selection
+      hex.addEventListener('click', () => {
+        const alreadySelected = selectedTiles.includes(tile.id);
+
+        if (alreadySelected) {
+          selectedTiles = selectedTiles.filter(t => t !== tile.id);
+          hex.style.backgroundColor = 'white';
+        } else if (selectedTiles.length < 3) {
+          selectedTiles.push(tile.id);
+          hex.style.backgroundColor = '#fffb6b'; // Yellow highlight
+        }
+
+        // Auto-submit when 3 selected
+        if (selectedTiles.length === 3) {
+          handleTapSubmit();
+        }
       });
-    }
+
+      rowDiv.appendChild(hex);
+    });
+    pyramid.appendChild(rowDiv);
+  });
+}
+
 
     function applyOps(tileList) {
       if (tileList.length === 0) return 0;
@@ -320,6 +343,27 @@
         document.getElementById('found').appendChild(li);
       }
       inputElem.value = '';
+    }
+
+    function handleTapSubmit() {
+      const input = selectedTiles.join('');
+      const selected = selectedTiles.map((ch) => tiles.find((t) => t.id === ch));
+
+      const result = applyOps(selected);
+      if (result === target && !found.has(input)) {
+        found.add(input);
+        score++;
+        document.getElementById('score').innerText = score;
+        const li = document.createElement('li');
+        li.textContent = input;
+        document.getElementById('found').appendChild(li);
+      }
+
+      // Reset selection and colors
+      selectedTiles = [];
+      document.querySelectorAll('.hex').forEach(hex => {
+        hex.style.backgroundColor = 'white';
+      });
     }
 
     function init() {

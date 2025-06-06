@@ -27,8 +27,8 @@
   
     .row {
       display: flex;
-      gap: .6vw;
-      margin-top: -2vw;
+      gap: .6rem;
+      margin-top: -1.5rem;
     }
   
     .row:first-child {
@@ -180,6 +180,10 @@
         height: 2rem;
         font-size: 1.2rem;
       }
+
+      selector {
+          -webkit-tap-highlight-color: none;
+      }
     }
   </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8735848760963536"
@@ -248,28 +252,9 @@
     }
 
     function generateTiles() {
-      const lettersShuffled = [...letters].sort(() => Math.random() - 0.5);
-      const selectedLetters = lettersShuffled.slice(0, 3);
-
-      const t1 = {
-        id: selectedLetters[0],
-        op: '+',
-        val: getRandomInt(1, 9),
-      };
-      const t2 = {
-        id: selectedLetters[1],
-        op: operators[getRandomInt(0, operators.length - 1)],
-        val: getRandomInt(1, 9),
-      };
-      const t3 = {
-        id: selectedLetters[2],
-        op: operators[getRandomInt(0, operators.length - 1)],
-        val: getRandomInt(1, 9),
-      };
-
-      const solutionTiles = [t1, t2, t3];
-      guaranteedSolution = solutionTiles.map(t => t.id);
-      target = applyOps(solutionTiles);
+      const { solutionTarget, solutionTiles } = generateGuaranteedSolution();
+      target = solutionTarget;
+      let guaranteedSolution = [...solutionTiles].map(t => t.id);
 
       const seen = new Set(solutionTiles.map(t => t.op + t.val));
       while (solutionTiles.length < 10) {
@@ -285,7 +270,56 @@
         });
       }
 
-      tiles = solutionTiles.sort(() => Math.random() - 0.5);
+      // tiles = solutionTiles.sort(() => Math.random() - 0.5); // breaks letter ordering
+      tiles = solutionTiles; 
+    }
+
+    function generateGuaranteedSolution() {
+      const solutionTarget = getRandomInt(1, 10); // Desired result
+  
+      // options - use assemble a list directly
+      // We'll try a few random operator combinations until one works
+      const possibleOps = ['+', '-', '*', '/'];
+      let op1, op2, a, b, c, actual;
+
+      for (let i = 0; i < 20; i++) { // 20 tries max
+          op1 = possibleOps[getRandomInt(0, 3)];
+          op2 = possibleOps[getRandomInt(0, 3)];
+
+          // Try solving backwards: generate b and c, then solve for a
+          b = getRandomInt(1, 9);
+          c = getRandomInt(1, 9);
+
+          for (let i = 0; i < 10; i++) {
+            
+
+            // try all 10 digits as the first tile of the solution
+            let testTileList = [
+                  { id: 'x', op: 'na', val: i, }, // op skipped here
+                  { id: 'x', op: op1, val: b, },
+                  { id: 'x', op: op2, val: c,}
+              ]
+            if (applyOps(testTileList) == solutionTarget) {
+              a = i;
+              break;
+            }
+          }
+
+          if (!Number.isInteger(a) || a < 1 || a > 9) continue;
+          console.log(a, op1, b, op2, c, solutionTarget);
+
+          return {
+              solutionTarget,
+              solutionTiles: [
+                  { id: 'A', val: a, op: possibleOps[getRandomInt(0, 3)] },
+                  { id: 'B', val: b, op: op1 },
+                  { id: 'C', val: c, op: op2 }
+              ]
+          };
+      }
+
+      // Fallback to original random generation if all else fails
+      return null;
     }
 
     function formatOperator(op) {
@@ -357,6 +391,7 @@
 
 
     function applyOps(tileList) {
+      console.log('applyOps');
       if (tileList.length === 0) return 0;
       // Ignore the operator on the first tile, treat its value as positive
       let expression = tileList[0].val.toString();
@@ -365,23 +400,6 @@
         const { op, val } = tileList[i];
         expression += op + val;
       }
-
-      // Evaluate expression respecting order of operations using Function constructor
-      // Replace division with Math.floor division to replicate integer division
-      // So replace all "÷" or "/" with "Math.floor(... / ...)" form manually
-      // Here operators are +, -, *, /, so just handle / with Math.floor
-
-      // We'll transform e.g. "7-4/2" into "7-Math.floor(4/2)"
-
-      // To do this properly, tokenize and replace divisions with floor
-
-      // But simpler: Replace all / with /, then evaluate and floor after
-
-      // Safer approach: Use a small helper to do integer division in expression
-
-      // Instead, let's parse and evaluate ourselves respecting precedence:
-
-      // We'll write a small parser for +, -, *, / with integer division
 
       function evaluate(expr) {
         // Tokenize expr
@@ -398,7 +416,7 @@
           } else if (token === '/') {
             const prev = stack.pop();
             const next = tokens[++i];
-            stack.push(Math.floor(prev / next));
+            stack.push(prev / next);
           } else {
             stack.push(token);
           }

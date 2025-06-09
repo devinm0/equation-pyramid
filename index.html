@@ -191,6 +191,7 @@
   </head>
 <body>
   <h1>Equation Pyramid</h1>
+  <div id="timer-display">Time: 0.00s</div>
   <button id="helpBtn" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; background: white; color: black; border: none; border-radius: 50%; width: 2.5rem; height: 2.5rem; cursor: pointer;">
     ?
   </button>
@@ -237,6 +238,9 @@
     const found = new Set();
     let guaranteedSolution = []; // Array of 3 tile IDs 
     let allPossibleSolutions = [];
+    let startTime;
+    let timerInterval;
+    let timeElapsed;
 
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -481,6 +485,8 @@
         document.getElementById("modal").style.display = "none";
       };
 
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 100);
     }
 
     window.onload = init;
@@ -606,8 +612,21 @@
       console.log(`You found ${foundCount} out of ${total} solutions.`);
 
       if (foundCount === total) {
-        alert("🎉 You've found all possible solutions!");
+        stopTimer();
+        alert(`All solutions found in ${timeElapsed} seconds`);
       }
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        updateTimer(); // Final update
+    }
+
+    function updateTimer() {
+        const now = Date.now();
+        const elapsedMs = now - startTime;
+        timeElapsed = (elapsedMs / 1000).toFixed(2);
+        document.getElementById('timer-display').textContent = `Time: ${timeElapsed}s`;
     }
   </script>
 </body>

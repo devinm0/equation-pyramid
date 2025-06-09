@@ -489,8 +489,12 @@
     }
 
     function init() {
-      generateTiles();
+      if (!parseTilesFromURL()) {
+        generateTiles();
+      }
       renderPyramid();
+      history.replaceState(null, '', generateShareableURL());
+      
       document.getElementById('target').innerText = target;
       score = 0;
       document.getElementById('score').innerText = score;
@@ -505,6 +509,7 @@
       document.getElementById("closeModal").onclick = () => {
         document.getElementById("modal").style.display = "none";
       };
+
     }
 
     window.onload = init;
@@ -516,6 +521,95 @@
       }
     };
 
+    function parseTilesFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const gameString = params.get('game');
+
+      if (!gameString) return false;
+
+      const [opsValsString, targetParam] = gameString.split('t');
+
+      let i = 0;
+      let opsVals = [];
+      while (i < opsValsString.length) {
+        console.log(opsValsString.slice(i,i+2));
+        opsVals.push(opsValsString.slice(i,i+2));
+        i += 2;
+      }
+      console.log(opsVals);
+
+      if (opsVals.length !== 10) return false;
+
+      console.log(opsVals[0]);
+      console.log(opsVals[0][1]);
+      tiles = opsVals.map((entry, i) => {
+        console.log(entry[1]);
+        console.log( parseInt(entry[1], 10));
+
+       return ({
+        id: letters[i],
+        op: urlOpToGameOp(entry[0]), // need to parse operator
+        val: parseInt(entry[1], 10)
+      })
+      });
+      target = parseInt(targetParam, 10);
+      return true;
+    }
+
+    function generateShareableURL() {
+      const base = window.location.origin + window.location.pathname;
+      console.log(tiles);
+      const tileString = tiles.map(t => encodeTile(t)).join('');
+      console.log(tileString);
+      return `${base}?game=${tileString}t${target}`;
+    }
+
+    function encodeTile(tile) {
+      let encodedOp = '';
+      let encodedVal = '';
+
+      switch(tile.op) {
+        case '*':
+          encodedOp = 'm';
+          break;
+        case '-':
+          encodedOp = 's';
+          break;
+        case '+':
+          encodedOp = 'a';
+          break;
+        case '/':
+          encodedOp = 'd';
+          break;
+        default:
+          break; //TODO throw error?
+      }
+
+      encodedVal = tile.val;
+      return encodedOp + encodedVal;
+    }
+
+    function urlOpToGameOp(op) {
+      switch(op) {
+        case 'm':
+          return '*';
+          break;
+        case 's':
+          return '-';
+          break;
+        case 'a':
+          return '+';
+          break;
+        case 'd':
+          return '/';
+          break;
+        default:
+          break; //TODO throw error?
+      }
+
+      encodedVal = tile.val;
+      return encodedOp + encodedVal;
+    }
   </script>
 </body>
 </html>

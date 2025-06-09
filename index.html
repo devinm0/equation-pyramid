@@ -72,11 +72,17 @@
   
     #found {
       display: flex;
-      flex-direction: column;
+      flex-direction: row; /* Change from column to row */
+      flex-wrap: wrap;
       gap: 8px;
       padding: 0;
       list-style: none;
-      align-items: center;
+      justify-content: center;
+      max-width: 480px;
+    }
+
+    .found > h3 {
+      text-align: center;
     }
   
     #found li {
@@ -191,7 +197,6 @@
   </head>
 <body>
   <h1>Equation Pyramid</h1>
-  <div id="timer-display">Time: 0.00s</div>
   <button id="helpBtn" style="position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; background: white; color: black; border: none; border-radius: 50%; width: 2.5rem; height: 2.5rem; cursor: pointer;">
     ?
   </button>
@@ -219,10 +224,10 @@
   
   <div class="pyramid" id="pyramid"></div>
   <div>
-    Target: <strong id="target"></strong> | Score: <strong id="score">0</strong>
+    Target: <strong id="target"></strong> | <strong id="timer-display">0.00s</strong>
   </div>
   <div class="found">
-    <h3>Found Solutions:</h3>
+    <h3><strong id="score">0</strong> Found Solutions:</h3>
     <ul id="found"></ul>
   </div>
 
